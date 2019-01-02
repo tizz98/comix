@@ -23,7 +23,17 @@ var rootCmd = &cobra.Command{
 				TimestampFormat: time.RFC3339Nano,
 			})
 		}
+
+		if verbose {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
 	},
+}
+
+var verbose bool
+
+func init() {
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 }
 
 func Execute() {
