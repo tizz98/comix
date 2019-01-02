@@ -94,6 +94,8 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 	return nil
 }
 
+// if any error happens in this method, it is logged and not thrown so that the program does not
+// exit and the current image being displayed will still be displayed.
 func (ctx *DownloaderContext) updateScreen() {
 	p := ctx.filePath(time.Now())
 	f, err := os.Open(p)
@@ -112,6 +114,7 @@ func (ctx *DownloaderContext) updateScreen() {
 	d := NewEpdDisplayer()
 	if err := d.WriteImage(img); err != nil {
 		logrus.WithError(err).Error("unable to write image to epd")
+		return
 	}
 }
 
