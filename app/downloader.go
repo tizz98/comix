@@ -37,6 +37,7 @@ type DownloaderContext struct {
 }
 
 func (ctx *DownloaderContext) Run(t time.Time) error {
+	// todo: refactor this monster function
 	ctx.m.Lock()
 	defer ctx.m.Unlock()
 
@@ -79,7 +80,7 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 			return err
 		}
 
-		logrus.Debugf("Saved %#v to %#v", comic.Title, f.Name())
+		logrus.Infof("Saved %#v to %#v", comic.Title, f.Name())
 	}
 
 	return nil
@@ -97,7 +98,7 @@ func (ctx *DownloaderContext) shouldDownloadNew(t time.Time) bool {
 }
 
 func (ctx *DownloaderContext) filePath(t time.Time) string {
-	return path.Join(ctx.outputFileDirectory, fmt.Sprintf("%s_comic_%s.png", ctx.Type, t.Format(time.RFC3339Nano)))
+	return path.Join(ctx.outputFileDirectory, fmt.Sprintf("%s_comic_%s.png", ctx.Type, t.Format("20060102")))
 }
 
 func isSameDate(t1, t2 time.Time) bool {
