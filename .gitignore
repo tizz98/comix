@@ -12,4 +12,6 @@
 *.out
 
 /comix
+/comix-pi
 *.png
+!example.png

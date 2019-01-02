@@ -75,15 +75,44 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 			return fmt.Errorf("invalid image type: %#v", mimeType)
 		}
 
-		// todo: save title somewhere?
-		if _, err := f.Write(comic.ImageData); err != nil {
+		img, err := png.Decode(bytes.NewReader(comic.ImageData))
+		if err != nil {
+			return err
+		}
+
+		composedImg := makeImage(img, t)
+		if err := png.Encode(f, composedImg); err != nil {
 			return err
 		}
 
 		logrus.Infof("Saved %#v to %#v", comic.Title, f.Name())
 	}
 
+	// todo: enable screen update
+	//go ctx.updateScreen()
+
 	return nil
+}
+
+func (ctx *DownloaderContext) updateScreen() {
+	p := ctx.filePath(time.Now())
+	f, err := os.Open(p)
+
+	if err != nil {
+		logrus.WithError(err).Error("unable to open file")
+		return
+	}
+
+	img, err := png.Decode(f)
+	if err != nil {
+		logrus.WithError(err).Error("unable to decode png")
+		return
+	}
+
+	d := NewEpdDisplayer()
+	if err := d.WriteImage(img); err != nil {
+		logrus.WithError(err).Error("unable to write image to epd")
+	}
 }
 
 func (ctx *DownloaderContext) downloader() Downloader {
@@ -108,7 +137,11 @@ func isSameDate(t1, t2 time.Time) bool {
 	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
-func RunDownloader(downloaderType DownloaderType, outputPath string) error {
+type Option struct {
+	TickDuration time.Duration
+}
+
+func RunDownloader(downloaderType DownloaderType, outputPath string, options *Option) error {
 	if downloaderType == DownloaderTypeUnknown {
 		return fmt.Errorf("invalid download type")
 	}
@@ -118,6 +151,11 @@ func RunDownloader(downloaderType DownloaderType, outputPath string) error {
 	signal.Notify(signalChan, os.Interrupt)
 
 	ticker := time.NewTicker(time.Minute)
+
+	if options != nil {
+		ticker = time.NewTicker(options.TickDuration)
+	}
+
 	ctx := DownloaderContext{Type: downloaderType, outputFileDirectory: outputPath}
 
 	go func() {

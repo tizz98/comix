@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -21,7 +23,7 @@ var downloaderCmd = &cobra.Command{
 		outputDir, _ := cmd.Flags().GetString("output-dir")
 
 		logrus.Info("Starting downloader...")
-		return app.RunDownloader(downloaderType, outputDir)
+		return app.RunDownloader(downloaderType, outputDir, &app.Option{TickDuration: 10 * time.Second})
 	},
 }
 
