@@ -16,7 +16,9 @@ var downloaderCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var downloaderType app.DownloaderType
 
-		if val, _ := cmd.Flags().GetString("source"); val == "xkcd" {
+		downloadSrc, _ := cmd.Flags().GetString("source")
+		switch downloadSrc {
+		case "xkcd":
 			downloaderType = app.DownloaderTypeXkcd
 		}
 
