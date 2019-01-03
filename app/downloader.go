@@ -15,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Downloader interface {
+type ComicDownloader interface {
 	// Returns the comic image as bytes (png or jpg), title, and any error
 	DownloadComic(time.Time) (*Comic, error)
 }
@@ -118,7 +118,7 @@ func (ctx *DownloaderContext) updateScreen() {
 	}
 }
 
-func (ctx *DownloaderContext) downloader() Downloader {
+func (ctx *DownloaderContext) downloader() ComicDownloader {
 	if ctx.Type == DownloaderTypeXkcd {
 		return &XkcdDownloader{}
 	}
