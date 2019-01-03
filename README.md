@@ -1,4 +1,5 @@
 # comix
+[![Build Status](https://travis-ci.com/tizz98/comix.svg?branch=master)](https://travis-ci.com/tizz98/comix)
 
 Comix is a raspberry pi based, daily comic calendar. Configurable with many different comic sources.
 
