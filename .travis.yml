@@ -7,3 +7,4 @@ script: make test
 
 env:
 - GO111MODULE=on
+
