@@ -22,7 +22,7 @@ Make sure you have this environment variable exported. `export GO111MODULE=on`
 #### Running
 note: all commands can use the `--verbose` flag for debug output.
 
-- Download comics and display them: `./comix downloader --source xkcd`
+- Download comics and display them: `./comix-pi downloader --source xkcd`
 - Version `./comix verion`
 
 ### Testing
@@ -32,3 +32,23 @@ note: all commands can use the `--verbose` flag for debug output.
 
 ### Example image output
 ![](./example.png)
+
+## Command and Control
+Hackers often use this approach when taking control of computers. They create their own CnC server which issues commands to its slaves.
+Our program uses a similar approach for handling automatic updates. You can run the CnC server with:
+
+```bash
+./comix cnc
+```
+
+It will default to port 1337, but you can change it like so:
+
+```bash
+COMIX_REDISADDRESS=127.0.0.1:6379 COMIX_REDISDBNUMBER=0 COMIX_UPDATEDISTRIBUTIONURL=https://s3.amazonaws.com/some-bucket \
+./comix cnc --port 4242
+```
+
+With this running, you can update the command you run on your raspberry pi to (be sure to change ip address!):
+```bash
+./comix-pi downloader --source xkcd --cnc 127.0.0.1:1337
+```

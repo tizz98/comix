@@ -1,11 +1,11 @@
-build: generate
+build:
 	go build .
 
-build-pi: generate
+build-pi:
 	GOARM=5 GOOS=linux GOARCH=arm go build -o comix-pi .
 
-test: generate
+test:
 	go test -v ./...
 
-generate:
+generate-proto:
 	protoc -I cnc cnc/cnc.proto --go_out=plugins=grpc:cnc
