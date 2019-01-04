@@ -53,4 +53,4 @@ EXPOSE 1337
 USER nobody:nobody
 
 # Run the compiled binary.
-ENTRYPOINT ["/app", "cnc", "--port", "1337"]
+ENTRYPOINT ["/app"]

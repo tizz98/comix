@@ -5,6 +5,7 @@ services:
     image: redis
   cnc:
     build: .
+    command: cnc --port 1337
     environment:
       COMIX_REDISADDRESS: redis:6379
       COMIX_REDISDBNUMBER: 0
