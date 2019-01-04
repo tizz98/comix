@@ -16,7 +16,7 @@ func TestService_Ping(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, database)
 
-	uri, err := url.Parse("https://example.com/")
+	uri, err := url.Parse("https://example.com/foo/")
 	require.NoError(t, err)
 
 	service := &Service{db: database, distUrl: uri}
@@ -60,7 +60,7 @@ func TestService_Ping(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.True(t, resp.HasUpdate)
-		assert.Equal(t, "https://example.com/comix-pi/3", resp.Url)
+		assert.Equal(t, "https://example.com/foo/comix-pi/3", resp.Url)
 		assert.Equal(t, []byte("123"), resp.Checksum)
 	})
 }

@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  redis:
+    image: redis
+  cnc:
+    build: .
+    environment:
+      COMIX_REDISADDRESS: redis:6379
+      COMIX_REDISDBNUMBER: 0
+      COMIX_REDISUPDATEDISTRIBUTIONURL: "${COMIX_REDISUPDATEDISTRIBUTIONURL}"
+    depends_on:
+      - redis
+    ports:
+      - "1337:1337"

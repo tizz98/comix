@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -137,13 +138,15 @@ func (s *Service) clientKey(id, key string) string {
 
 func (s *Service) binaryUrl(version int) string {
 	u := *s.distUrl
-	u.Path = fmt.Sprintf("/comix-pi/%d", version)
+	u.Path = strings.TrimRight(u.Path, "/")
+	u.Path += fmt.Sprintf("/comix-pi/%d", version)
 	return u.String()
 }
 
 func (s *Service) binaryChecksum(version int) ([]byte, error) {
 	u := *s.distUrl
-	u.Path = fmt.Sprintf("/comix-pi/%d.sha", version)
+	u.Path = strings.TrimRight(u.Path, "/")
+	u.Path += fmt.Sprintf("/comix-pi/%d.sha", version)
 	return getChecksum(u.String())
 }
 

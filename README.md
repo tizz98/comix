@@ -54,5 +54,11 @@ The following environment variables also must be set:
 
 With this running, you can update the command you run on your raspberry pi to (be sure to change ip address!):
 ```bash
-./comix-pi downloader --source xkcd --cnc 127.0.0.1:1337
+./comix-pi downloader --source xkcd --cnc 127.0.0.1:1337 --client-id 123
+```
+
+The CnC service can also be run with docker. 
+
+```bash
+COMIX_REDISUPDATEDISTRIBUTIONURL=https://s3.amazonaws.com/some-bucket docker-compose up
 ```

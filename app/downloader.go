@@ -109,7 +109,7 @@ func (ctx *DownloaderContext) updateBinary() {
 		return
 	}
 
-	conn, err := grpc.Dial(ctx.cncAddr)
+	conn, err := grpc.Dial(ctx.cncAddr, grpc.WithInsecure())
 	if err != nil {
 		logrus.WithError(err).Error("unable to connect to grpc server")
 		return
@@ -232,9 +232,8 @@ func RunDownloader(downloaderType DownloaderType, outputPath string, options *Op
 	if options != nil {
 		ticker = time.NewTicker(*options.TickDuration)
 
-		if options.CnCAddress != "" {
-			ctx.cncAddr = options.CnCAddress
-		}
+		ctx.cncAddr = options.CnCAddress
+		ctx.cncClientId = options.ClientId
 	}
 
 	go func() {
