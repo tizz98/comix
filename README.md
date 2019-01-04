@@ -27,7 +27,8 @@ note: all commands can use the `--verbose` flag for debug output.
 
 ### Testing
 
-`make test`
+1. Run redis `docker run -d redis -p 6379`
+1. Run tests `REDIS_ADDRESS=127.0.0.1:6379 make test`
 
 ### Example image output
 ![](./example.png)

@@ -31,12 +31,12 @@ func (x *XkcdDownloader) DownloadComic(t time.Time) (*Comic, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	return &Comic{ImageData: body, Title: comic.Title}, nil
 }

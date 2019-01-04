@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/viper"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
@@ -27,6 +29,9 @@ var rootCmd = &cobra.Command{
 		if verbose {
 			logrus.SetLevel(logrus.DebugLevel)
 		}
+
+		viper.SetEnvPrefix("comix")
+		viper.AutomaticEnv()
 	},
 }
 
