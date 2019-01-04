@@ -8,5 +8,4 @@ go:
   - "1.11.x"
 script: make test
 env:
-  - GO111MODULE=on
-  - REDIS_ADDRESS=127.0.0.1:6379
+  - GO111MODULE=on REDIS_ADDRESS=127.0.0.1:6379
