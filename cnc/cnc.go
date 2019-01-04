@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
@@ -13,13 +14,18 @@ import (
 )
 
 type ClientStatus struct {
-	Ok      bool
-	Message string
+	Ok         bool
+	Message    string
+	LastUpdate *time.Time
 }
 
 type Service struct {
 	db      *db.Db
 	distUrl *url.URL
+}
+
+func NewTime(t time.Time) *time.Time {
+	return &t
 }
 
 func New() (*Service, error) {
@@ -39,29 +45,21 @@ func New() (*Service, error) {
 	return &Service{db: database, distUrl: distUrl}, nil
 }
 
-//func (s *Service) ApplyPatch(ctx context.Context, u *CnCUpdate) (*Status, error) {
-//	resp, err := http.Get(u.GetUrl())
-//	if err != nil {
-//		return &Status{Success: false}, err
-//	}
-//	defer resp.Body.Close()
-//
-//	err = update.Apply(resp.Body, update.Options{
-//		Hash:     crypto.SHA256,
-//		Checksum: u.GetChecksum(),
-//	})
-//	if err != nil {
-//		if rerr := update.RollbackError(err); rerr != nil {
-//			logrus.WithError(rerr).Error("failed to rollback from bad update")
-//		}
-//	}
-//
-//	return &Status{Success: err == nil}, err
-//}
+func (s *Service) UpdateStatus(ctx context.Context, update *UpdateMsg) (*Status, error) {
+	if !update.UpdateComplete {
+		return nil, s.setClientStatus(update.GetClientId(), &ClientStatus{Ok: false, Message: update.GetUpdateMessage()})
+	}
+
+	return &Status{}, s.setClientStatus(update.GetClientId(), &ClientStatus{Ok: true})
+}
 
 func (s *Service) Ping(ctx context.Context, msg *PingMsg) (*Response, error) {
 	if !msg.Ok {
-		return nil, s.setClientStatus(msg.GetClientId(), msg.GetStatusMessage())
+		return nil, s.setClientStatus(msg.GetClientId(), &ClientStatus{Ok: false, Message: msg.GetStatusMessage()})
+	}
+
+	if err := s.setClientStatus(msg.GetClientId(), &ClientStatus{Ok: true}); err != nil {
+		return nil, err
 	}
 
 	if needsNewVersion, err := s.clientNeedsNewVersion(msg.GetClientId()); err != nil {
@@ -99,18 +97,20 @@ func (s *Service) getLatestFileVersion() (int, error) {
 	return v, nil
 }
 
-func (s *Service) setClientStatus(clientId, status string) error {
+func (s *Service) setClientStatus(clientId string, status *ClientStatus) error {
+	status.LastUpdate = NewTime(time.Now())
+
 	if _, err := s.db.Set(s.clientKey(clientId, "status"), status); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Service) getClientStatus(clientId string) (string, error) {
-	var status string
+func (s *Service) getClientStatus(clientId string) (*ClientStatus, error) {
+	var status *ClientStatus
 
 	if _, err := s.db.Get(s.clientKey(clientId, "status"), &status); err != nil {
-		return "", err
+		return nil, err
 	}
 	return status, nil
 }

@@ -28,7 +28,7 @@ func TestService_Ping(t *testing.T) {
 		status, err := service.getClientStatus("123")
 		require.NoError(t, err)
 
-		assert.Equal(t, "unable to apply update", status)
+		assert.Equal(t, "unable to apply update", status.Message)
 	})
 
 	t.Run("NoUpdate", func(t *testing.T) {

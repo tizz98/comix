@@ -4,12 +4,22 @@ package cnc;
 
 service CnC {
     rpc Ping (PingMsg) returns (Response) {}
+    rpc UpdateStatus(UpdateMsg) returns (Status) {}
 }
 
 message Response {
     bool has_update = 1;
     string url = 2;
     bytes checksum = 3;
+}
+
+message UpdateMsg {
+    bool updateComplete = 1;
+    string updateMessage = 2;
+    string clientId = 3;
+}
+
+message Status {
 }
 
 message PingMsg {

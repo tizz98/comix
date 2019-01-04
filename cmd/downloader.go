@@ -25,7 +25,14 @@ var downloaderCmd = &cobra.Command{
 		outputDir, _ := cmd.Flags().GetString("output-dir")
 
 		logrus.Info("Starting downloader...")
-		return app.RunDownloader(downloaderType, outputDir, &app.Option{TickDuration: 10 * time.Second})
+		options := &app.Option{TickDuration: app.NewDuration(10 * time.Second)}
+
+		if cncAddr, _ := cmd.Flags().GetString("cnc"); cncAddr != "" {
+			options.CnCAddress = cncAddr
+			options.ClientId, _ = cmd.Flags().GetString("client-id")
+		}
+
+		return app.RunDownloader(downloaderType, outputDir, options)
 	},
 }
 
@@ -35,5 +42,8 @@ func init() {
 	downloaderCmd.Flags().String("source", "", "the source of comics to download (e.g. xkcd)")
 	downloaderCmd.MarkFlagRequired("source")
 
+	downloaderCmd.Flags().String("client-id", "", "the id of this client (e.g. 123, foo-bar)")
+
 	downloaderCmd.Flags().String("output-dir", ".", "the directory to save the comic image files")
+	downloaderCmd.Flags().String("cnc", "", "an optional cnc server (e.g. 127.0.0.1:1337)")
 }

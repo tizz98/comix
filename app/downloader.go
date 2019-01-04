@@ -2,6 +2,8 @@ package app
 
 import (
 	"bytes"
+	"context"
+	"crypto"
 	"fmt"
 	"image/jpeg"
 	"image/png"
@@ -12,7 +14,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/go-update"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+
+	"github.com/tizz98/comix/cnc"
 )
 
 type ComicDownloader interface {
@@ -32,6 +38,8 @@ type DownloaderContext struct {
 	LastDownload *time.Time
 
 	outputFileDirectory string
+	cncAddr             string
+	cncClientId         string
 
 	m sync.Mutex
 }
@@ -89,9 +97,68 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 	}
 
 	// todo: enable screen update
-	//go ctx.updateScreen()
+	//ctx.updateScreen()
+	ctx.updateBinary()
 
 	return nil
+}
+
+func (ctx *DownloaderContext) updateBinary() {
+	if ctx.cncAddr == "" || ctx.cncClientId == "" {
+		logrus.Warn("cnc address or client id not set, not performing automatic updates")
+		return
+	}
+
+	conn, err := grpc.Dial(ctx.cncAddr)
+	if err != nil {
+		logrus.WithError(err).Error("unable to connect to grpc server")
+		return
+	}
+	defer conn.Close()
+
+	client := cnc.NewCnCClient(conn)
+	resp, err := client.Ping(context.Background(), &cnc.PingMsg{
+		ClientId: ctx.cncClientId,
+		Ok:       true,
+	})
+	if err != nil {
+		logrus.WithError(err).Error("unable to ping cnc server")
+		return
+	}
+
+	errorMsg := ""
+
+	defer func() {
+		if errorMsg != "" {
+			if _, err := client.UpdateStatus(context.Background(), &cnc.UpdateMsg{
+				ClientId:       ctx.cncClientId,
+				UpdateMessage:  errorMsg,
+				UpdateComplete: errorMsg == "",
+			}); err != nil {
+				logrus.WithError(err).Error("unable to post status update")
+			}
+		}
+	}()
+
+	if resp.HasUpdate {
+		httpResp, err := http.Get(resp.GetUrl())
+		if err != nil {
+			logrus.WithError(err).Error("unable to request binary url")
+			return
+		}
+		defer httpResp.Body.Close()
+
+		err = update.Apply(httpResp.Body, update.Options{
+			Hash:     crypto.SHA256,
+			Checksum: resp.GetChecksum(),
+		})
+		if err != nil {
+			if rerr := update.RollbackError(err); rerr != nil {
+				logrus.WithError(rerr).Error("failed to rollback from bad update")
+				return
+			}
+		}
+	}
 }
 
 // if any error happens in this method, it is logged and not thrown so that the program does not
@@ -141,7 +208,13 @@ func isSameDate(t1, t2 time.Time) bool {
 }
 
 type Option struct {
-	TickDuration time.Duration
+	TickDuration *time.Duration
+	CnCAddress   string
+	ClientId     string
+}
+
+func NewDuration(d time.Duration) *time.Duration {
+	return &d
 }
 
 func RunDownloader(downloaderType DownloaderType, outputPath string, options *Option) error {
@@ -154,12 +227,15 @@ func RunDownloader(downloaderType DownloaderType, outputPath string, options *Op
 	signal.Notify(signalChan, os.Interrupt)
 
 	ticker := time.NewTicker(time.Minute)
+	ctx := DownloaderContext{Type: downloaderType, outputFileDirectory: outputPath}
 
 	if options != nil {
-		ticker = time.NewTicker(options.TickDuration)
-	}
+		ticker = time.NewTicker(*options.TickDuration)
 
-	ctx := DownloaderContext{Type: downloaderType, outputFileDirectory: outputPath}
+		if options.CnCAddress != "" {
+			ctx.cncAddr = options.CnCAddress
+		}
+	}
 
 	go func() {
 		for {
