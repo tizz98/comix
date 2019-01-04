@@ -44,9 +44,13 @@ Our program uses a similar approach for handling automatic updates. You can run 
 It will default to port 1337, but you can change it like so:
 
 ```bash
-COMIX_REDISADDRESS=127.0.0.1:6379 COMIX_REDISDBNUMBER=0 COMIX_UPDATEDISTRIBUTIONURL=https://s3.amazonaws.com/some-bucket \
 ./comix cnc --port 4242
 ```
+
+The following environment variables also must be set:
+- `COMIX_REDISADDRESS`
+- `COMIX_REDISDBNUMBER`
+- `COMIX_REDISUPDATEDISTRIBUTIONURL`
 
 With this running, you can update the command you run on your raspberry pi to (be sure to change ip address!):
 ```bash
