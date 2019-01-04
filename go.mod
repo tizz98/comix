@@ -25,4 +25,5 @@ require (
 	golang.org/x/image v0.0.0-20181116024801-cd38e8056d9b
 	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
 	google.golang.org/grpc v1.17.0
+	honnef.co/go/tools v0.0.0-20190104064624-c51f1e51d5a3 // indirect
 )
