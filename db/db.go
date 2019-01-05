@@ -56,3 +56,9 @@ func (d *Db) SAdd(key string, values ...interface{}) error {
 func (d *Db) SMembers(key string) ([]string, error) {
 	return d.client.SMembers(key).Result()
 }
+
+// Useful for testing
+func (d *Db) FlushDb() error {
+	_, err := d.client.FlushDB().Result()
+	return err
+}

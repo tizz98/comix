@@ -105,6 +105,10 @@ func (s *Service) getLatestFileVersion() (int, error) {
 }
 
 func (s *Service) setClientStatus(clientId string, status *ClientStatus) error {
+	if err := s.addClientId(clientId); err != nil {
+		return err
+	}
+
 	status.Id = clientId
 	status.LastUpdate = NewTime(time.Now())
 
@@ -133,6 +137,9 @@ func (s *Service) getClientCurrentVersion(clientId string) (int, error) {
 }
 
 func (s *Service) setClientCurrentVersion(clientId string, version int) error {
+	if err := s.addClientId(clientId); err != nil {
+		return err
+	}
 	if _, err := s.db.Set(s.clientKey(clientId, "version"), version); err != nil {
 		return err
 	}
