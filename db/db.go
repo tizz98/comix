@@ -47,3 +47,18 @@ func (d *Db) Set(key string, value interface{}) (interface{}, error) {
 	}
 	return d.client.Set(key, b, 0).Result()
 }
+
+func (d *Db) SAdd(key string, values ...interface{}) error {
+	_, err := d.client.SAdd(key, values...).Result()
+	return err
+}
+
+func (d *Db) SMembers(key string) ([]string, error) {
+	return d.client.SMembers(key).Result()
+}
+
+// Useful for testing
+func (d *Db) FlushDb() error {
+	_, err := d.client.FlushDB().Result()
+	return err
+}
