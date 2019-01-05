@@ -3,6 +3,7 @@ package cnc
 import (
 	"net/url"
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ func TestService_Ping(t *testing.T) {
 		err := service.setClientCurrentVersion("1234", 3)
 		require.NoError(t, err)
 
-		err = service.setLatestFileVersion(3)
+		err = service.SetLatestFileVersion(3)
 		require.NoError(t, err)
 
 		resp, err := service.Ping(nil, &PingMsg{Ok: true, ClientId: "1234"})
@@ -48,7 +49,7 @@ func TestService_Ping(t *testing.T) {
 		err := service.setClientCurrentVersion("12345", 2)
 		require.NoError(t, err)
 
-		err = service.setLatestFileVersion(3)
+		err = service.SetLatestFileVersion(3)
 		require.NoError(t, err)
 
 		// mock function
@@ -63,4 +64,62 @@ func TestService_Ping(t *testing.T) {
 		assert.Equal(t, "https://example.com/foo/comix-pi/3", resp.Url)
 		assert.Equal(t, []byte("123"), resp.Checksum)
 	})
+}
+
+func TestService_GetClients(t *testing.T) {
+	database, err := db.NewDb(os.Getenv("REDIS_ADDRESS"), 0)
+	require.NoError(t, err)
+	require.NotNil(t, database)
+
+	uri, err := url.Parse("https://example.com/foo/")
+	require.NoError(t, err)
+
+	service := &Service{db: database, distUrl: uri}
+
+	err = service.setClientStatus("123", &ClientStatus{Ok: true})
+	require.NoError(t, err)
+
+	err = service.setClientStatus("foo", &ClientStatus{Ok: true})
+	require.NoError(t, err)
+
+	err = service.setClientStatus("bar", &ClientStatus{Ok: false, Message: "unable to apply update"})
+	require.NoError(t, err)
+
+	clients, err := service.GetClients()
+	require.NoError(t, err)
+
+	assert.Len(t, clients, 3)
+
+	// we don't care about order, redis sets are unsorted
+	sort.Slice(clients, func(i, j int) bool {
+		return clients[i].Id < clients[j].Id
+	})
+
+	expected := []*ClientStatus{
+		{"123", true, "", nil},
+		{"bar", false, "unable to apply update", nil},
+		{"foo", true, "", nil},
+	}
+
+	for i, s := range clients {
+		assert.True(t, s.equal(expected[i]))
+	}
+}
+
+func TestService_SetLatestFileVersion(t *testing.T) {
+	database, err := db.NewDb(os.Getenv("REDIS_ADDRESS"), 0)
+	require.NoError(t, err)
+	require.NotNil(t, database)
+
+	uri, err := url.Parse("https://example.com/foo/")
+	require.NoError(t, err)
+
+	service := &Service{db: database, distUrl: uri}
+
+	err = service.SetLatestFileVersion(10)
+	require.NoError(t, err)
+
+	v, err := service.getLatestFileVersion()
+	require.NoError(t, err)
+	assert.Equal(t, 10, v)
 }

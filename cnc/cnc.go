@@ -15,9 +15,15 @@ import (
 )
 
 type ClientStatus struct {
+	Id         string
 	Ok         bool
 	Message    string
 	LastUpdate *time.Time
+}
+
+// this does not compare the LastUpdateField
+func (s *ClientStatus) equal(other *ClientStatus) bool {
+	return s.Id == other.Id && s.Ok == other.Ok && s.Message == other.Message
 }
 
 type Service struct {
@@ -82,7 +88,7 @@ func (s *Service) Ping(ctx context.Context, msg *PingMsg) (*Response, error) {
 	return &Response{HasUpdate: false}, nil
 }
 
-func (s *Service) setLatestFileVersion(version int) error {
+func (s *Service) SetLatestFileVersion(version int) error {
 	if _, err := s.db.Set("latest_version", version); err != nil {
 		return err
 	}
@@ -99,6 +105,7 @@ func (s *Service) getLatestFileVersion() (int, error) {
 }
 
 func (s *Service) setClientStatus(clientId string, status *ClientStatus) error {
+	status.Id = clientId
 	status.LastUpdate = NewTime(time.Now())
 
 	if _, err := s.db.Set(s.clientKey(clientId, "status"), status); err != nil {
@@ -164,6 +171,14 @@ func (s *Service) clientNeedsNewVersion(clientId string) (bool, error) {
 	return latestVersion > currentVersion, nil
 }
 
+func (s *Service) getClientIds() ([]string, error) {
+	return s.db.SMembers("client_ids")
+}
+
+func (s *Service) addClientId(id string) error {
+	return s.db.SAdd("client_ids", id)
+}
+
 var getChecksum = func(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -172,4 +187,23 @@ var getChecksum = func(url string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+func (s *Service) GetClients() ([]*ClientStatus, error) {
+	ids, err := s.getClientIds()
+	if err != nil {
+		return nil, err
+	}
+
+	statuses := make([]*ClientStatus, len(ids))
+
+	for i, id := range ids {
+		if status, err := s.getClientStatus(id); err != nil {
+			return nil, err
+		} else {
+			statuses[i] = status
+		}
+	}
+
+	return statuses, err
 }
