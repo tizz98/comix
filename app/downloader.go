@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/inconshreveable/go-update"
@@ -41,7 +42,8 @@ type DownloaderContext struct {
 	cncAddr             string
 	cncClientId         string
 
-	m sync.Mutex
+	m        sync.Mutex
+	stopChan chan os.Signal
 }
 
 func (ctx *DownloaderContext) Run(t time.Time) error {
@@ -51,6 +53,7 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 
 	if !ctx.shouldDownloadNew(t) {
 		logrus.Debug("same date, not downloading new comic")
+		ctx.updateBinary()
 		return nil
 	}
 
@@ -98,21 +101,26 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 
 	// todo: enable screen update
 	//ctx.updateScreen()
-	ctx.updateBinary()
+
+	// if an update happened, stop the program.
+	// a supervisor should restart it.
+	if didUpdate := ctx.updateBinary(); didUpdate {
+		ctx.stopChan <- syscall.SIGINT
+	}
 
 	return nil
 }
 
-func (ctx *DownloaderContext) updateBinary() {
+func (ctx *DownloaderContext) updateBinary() bool {
 	if ctx.cncAddr == "" || ctx.cncClientId == "" {
 		logrus.Warn("cnc address or client id not set, not performing automatic updates")
-		return
+		return false
 	}
 
 	conn, err := grpc.Dial(ctx.cncAddr, grpc.WithInsecure())
 	if err != nil {
 		logrus.WithError(err).Error("unable to connect to grpc server")
-		return
+		return false
 	}
 	defer conn.Close()
 
@@ -123,31 +131,34 @@ func (ctx *DownloaderContext) updateBinary() {
 	})
 	if err != nil {
 		logrus.WithError(err).Error("unable to ping cnc server")
-		return
+		return false
 	}
 
 	errorMsg := ""
 
 	defer func() {
-		if errorMsg != "" {
-			if _, err := client.UpdateStatus(context.Background(), &cnc.UpdateMsg{
-				ClientId:       ctx.cncClientId,
-				UpdateMessage:  errorMsg,
-				UpdateComplete: errorMsg == "",
-			}); err != nil {
-				logrus.WithError(err).Error("unable to post status update")
-			}
+		logrus.Debug("sending status update")
+		if _, err := client.UpdateStatus(context.Background(), &cnc.UpdateMsg{
+			ClientId:       ctx.cncClientId,
+			UpdateMessage:  errorMsg,
+			UpdateComplete: errorMsg == "",
+		}); err != nil {
+			logrus.WithError(err).Error("unable to post status update")
 		}
+		logrus.Debug("finished sending status update")
 	}()
 
 	if resp.HasUpdate {
+		logrus.Debug("downloading updated binary")
+
 		httpResp, err := http.Get(resp.GetUrl())
 		if err != nil {
 			logrus.WithError(err).Error("unable to request binary url")
-			return
+			return false
 		}
 		defer httpResp.Body.Close()
 
+		logrus.Debug("applying update")
 		err = update.Apply(httpResp.Body, update.Options{
 			Hash:     crypto.SHA256,
 			Checksum: resp.GetChecksum(),
@@ -155,10 +166,16 @@ func (ctx *DownloaderContext) updateBinary() {
 		if err != nil {
 			if rerr := update.RollbackError(err); rerr != nil {
 				logrus.WithError(rerr).Error("failed to rollback from bad update")
-				return
+				return false
 			}
 		}
+		logrus.Debug("finished applying update")
+		return true
+	} else {
+		logrus.Debug("no binary update")
 	}
+
+	return false
 }
 
 // if any error happens in this method, it is logged and not thrown so that the program does not
@@ -227,7 +244,7 @@ func RunDownloader(downloaderType DownloaderType, outputPath string, options *Op
 	signal.Notify(signalChan, os.Interrupt)
 
 	ticker := time.NewTicker(time.Minute)
-	ctx := DownloaderContext{Type: downloaderType, outputFileDirectory: outputPath}
+	ctx := DownloaderContext{Type: downloaderType, outputFileDirectory: outputPath, stopChan: signalChan}
 
 	if options != nil {
 		ticker = time.NewTicker(*options.TickDuration)

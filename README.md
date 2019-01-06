@@ -50,7 +50,7 @@ It will default to port 1337, but you can change it like so:
 The following environment variables also must be set:
 - `COMIX_REDISADDRESS`
 - `COMIX_REDISDBNUMBER`
-- `COMIX_REDISUPDATEDISTRIBUTIONURL`
+- `COMIX_UPDATEDISTRIBUTIONURL`
 
 With this running, you can update the command you run on your raspberry pi to (be sure to change ip address!):
 ```bash
@@ -60,5 +60,5 @@ With this running, you can update the command you run on your raspberry pi to (b
 The CnC service can also be run with docker. 
 
 ```bash
-COMIX_REDISUPDATEDISTRIBUTIONURL=https://s3.amazonaws.com/some-bucket docker-compose up
+COMIX_UPDATEDISTRIBUTIONURL=https://s3.amazonaws.com/some-bucket docker-compose up
 ```

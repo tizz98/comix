@@ -74,6 +74,7 @@ func TestService_Ping(t *testing.T) {
 
 			// mock function
 			getChecksum = func(url string) ([]byte, error) {
+				assert.Equal(t, "https://example.com/foo/comix-pi/3.sha", url)
 				return []byte("123"), nil
 			}
 
