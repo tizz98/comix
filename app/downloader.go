@@ -144,8 +144,9 @@ func (ctx *DownloaderContext) updateBinary() bool {
 			UpdateComplete: errorMsg == "",
 		}); err != nil {
 			logrus.WithError(err).Error("unable to post status update")
+		} else {
+			logrus.Debug("finished sending status update")
 		}
-		logrus.Debug("finished sending status update")
 	}()
 
 	if resp.HasUpdate {
@@ -161,14 +162,20 @@ func (ctx *DownloaderContext) updateBinary() bool {
 		logrus.Debug("applying update")
 		err = update.Apply(httpResp.Body, update.Options{
 			Hash:     crypto.SHA256,
-			Checksum: resp.GetChecksum(),
+			Checksum: []byte(resp.GetChecksum()),
 		})
 		if err != nil {
+			logrus.WithError(err).Debug("error applying update, trying to rollback")
+
 			if rerr := update.RollbackError(err); rerr != nil {
 				logrus.WithError(rerr).Error("failed to rollback from bad update")
-				return false
+			} else {
+				logrus.Debug("rollback succeeded")
 			}
+
+			return false
 		}
+
 		logrus.Debug("finished applying update")
 		return true
 	} else {

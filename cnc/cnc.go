@@ -157,7 +157,7 @@ func (s *Service) binaryUrl(version int) string {
 	return u.String()
 }
 
-func (s *Service) binaryChecksum(version int) ([]byte, error) {
+func (s *Service) binaryChecksum(version int) (string, error) {
 	u := *s.distUrl
 	u.Path = strings.TrimRight(u.Path, "/")
 	u.Path += fmt.Sprintf("/comix-pi/%d.sha", version)
@@ -186,14 +186,18 @@ func (s *Service) addClientId(id string) error {
 	return s.db.SAdd("client_ids", id)
 }
 
-var getChecksum = func(url string) ([]byte, error) {
+var getChecksum = func(url string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	return ioutil.ReadAll(resp.Body)
+	if b, err := ioutil.ReadAll(resp.Body); err != nil {
+		return "", err
+	} else {
+		return string(b), err
+	}
 }
 
 func (s *Service) GetClients() ([]*ClientStatus, error) {

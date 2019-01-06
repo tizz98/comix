@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"sort"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -19,6 +21,10 @@ var getClientsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
+		sort.Slice(clients, func(i, j int) bool {
+			return clients[i].Id < clients[j].Id
+		})
 
 		for _, c := range clients {
 			logrus.WithFields(logrus.Fields{

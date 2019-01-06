@@ -73,9 +73,9 @@ func TestService_Ping(t *testing.T) {
 			require.NoError(t, err)
 
 			// mock function
-			getChecksum = func(url string) ([]byte, error) {
+			getChecksum = func(url string) (string, error) {
 				assert.Equal(t, "https://example.com/foo/comix-pi/3.sha", url)
-				return []byte("123"), nil
+				return "123", nil
 			}
 
 			resp, err := service.Ping(nil, &PingMsg{Ok: true, ClientId: "12345"})
