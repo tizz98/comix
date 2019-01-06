@@ -83,7 +83,7 @@ func TestService_Ping(t *testing.T) {
 
 			assert.True(t, resp.HasUpdate)
 			assert.Equal(t, "https://example.com/foo/comix-pi/3", resp.Url)
-			assert.Equal(t, []byte("123"), resp.Checksum)
+			assert.Equal(t, "123", resp.Checksum)
 		})
 	})
 }
