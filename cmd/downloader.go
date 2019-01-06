@@ -20,6 +20,8 @@ var downloaderCmd = &cobra.Command{
 		switch downloadSrc {
 		case "xkcd":
 			downloaderType = app.DownloaderTypeXkcd
+		case "dilbert":
+			downloaderType = app.DownloaderTypeDilbert
 		}
 
 		outputDir, _ := cmd.Flags().GetString("output-dir")

@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto"
 	"fmt"
-	"image/jpeg"
 	"image/png"
 	"net/http"
 	"os"
@@ -32,6 +31,7 @@ type DownloaderType string
 const (
 	DownloaderTypeUnknown DownloaderType = "unknown"
 	DownloaderTypeXkcd    DownloaderType = "xkcd"
+	DownloaderTypeDilbert DownloaderType = "dilbert"
 )
 
 type DownloaderContext struct {
@@ -61,6 +61,7 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 
 	downloader := ctx.downloader()
 	if comic, err := downloader.DownloadComic(t); err != nil || comic == nil {
+		logrus.WithError(err).Error("unable to download comic")
 		return err
 	} else {
 		f, err := os.Create(ctx.filePath(t))
@@ -69,30 +70,21 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 		}
 		defer f.Close()
 
-		mimeType := http.DetectContentType(comic.ImageData)
-		switch mimeType {
-		case "image/png":
-		case "image/jpeg":
-			img, err := jpeg.Decode(bytes.NewReader(comic.ImageData))
-			if err != nil {
-				return err
-			}
-
-			comic.ImageData = []byte{}
-			if err := png.Encode(bytes.NewBuffer(comic.ImageData), img); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("invalid image type: %#v", mimeType)
+		comic.ImageData, err = ToPng(comic.ImageData)
+		if err != nil {
+			logrus.WithError(err).Error("unable to convert to png")
+			return err
 		}
 
 		img, err := png.Decode(bytes.NewReader(comic.ImageData))
 		if err != nil {
+			logrus.WithError(err).Error("unable to decode png")
 			return err
 		}
 
 		composedImg := makeImage(img, t)
 		if err := png.Encode(f, composedImg); err != nil {
+			logrus.WithError(err).Error("unable to encode png")
 			return err
 		}
 
@@ -210,8 +202,11 @@ func (ctx *DownloaderContext) updateScreen() {
 }
 
 func (ctx *DownloaderContext) downloader() ComicDownloader {
-	if ctx.Type == DownloaderTypeXkcd {
+	switch ctx.Type {
+	case DownloaderTypeXkcd:
 		return &XkcdDownloader{}
+	case DownloaderTypeDilbert:
+		return &DilbertDownloader{}
 	}
 	return nil
 }

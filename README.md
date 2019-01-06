@@ -7,6 +7,7 @@ Comix is a raspberry pi based, daily comic calendar. Configurable with many diff
 
 ## Sources
 1. [XKCD](https://xkcd.com/)
+1. [Dilbert](https://dilbert.com/)
 
 ## Building
 
