@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"fmt"
 	"image/png"
 	"net/http"
@@ -152,10 +151,7 @@ func (ctx *DownloaderContext) updateBinary() bool {
 		defer httpResp.Body.Close()
 
 		logrus.Debug("applying update")
-		err = update.Apply(httpResp.Body, update.Options{
-			Hash:     crypto.SHA256,
-			Checksum: []byte(resp.GetChecksum()),
-		})
+		err = update.Apply(httpResp.Body, update.Options{})
 		if err != nil {
 			logrus.WithError(err).Debug("error applying update, trying to rollback")
 
