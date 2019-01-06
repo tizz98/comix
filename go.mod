@@ -2,6 +2,7 @@ module github.com/tizz98/comix
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/fogleman/gg v1.1.0
 	github.com/go-redis/redis v6.15.0+incompatible
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
@@ -23,6 +24,6 @@ require (
 	github.com/wmarbut/goxbm v0.0.0-20170324151619-d190b0856849 // indirect
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
 	golang.org/x/image v0.0.0-20181116024801-cd38e8056d9b
-	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
+	golang.org/x/net v0.0.0-20181114220301-adae6a3d119a
 	google.golang.org/grpc v1.17.0
 )
