@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto"
 	"fmt"
-	"image/jpeg"
 	"image/png"
 	"net/http"
 	"os"
@@ -71,26 +70,10 @@ func (ctx *DownloaderContext) Run(t time.Time) error {
 		}
 		defer f.Close()
 
-		mimeType := http.DetectContentType(comic.ImageData)
-		logrus.Debugf("image has content type: %#v", mimeType)
-
-		switch mimeType {
-		case "image/png":
-		case "image/jpeg":
-			img, err := jpeg.Decode(bytes.NewReader(comic.ImageData))
-			if err != nil {
-				logrus.WithError(err).Error("unable to decode jpeg")
-				return err
-			}
-
-			buf := new(bytes.Buffer)
-			if err := png.Encode(buf, img); err != nil {
-				logrus.WithError(err).Error("unable to write png")
-				return err
-			}
-			comic.ImageData = buf.Bytes()
-		default:
-			return fmt.Errorf("invalid image type: %#v", mimeType)
+		comic.ImageData, err = ToPng(comic.ImageData)
+		if err != nil {
+			logrus.WithError(err).Error("unable to convert to png")
+			return err
 		}
 
 		img, err := png.Decode(bytes.NewReader(comic.ImageData))
