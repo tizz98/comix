@@ -25,5 +25,5 @@ require (
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
 	golang.org/x/image v0.0.0-20181116024801-cd38e8056d9b
 	golang.org/x/net v0.0.0-20181114220301-adae6a3d119a
-	google.golang.org/grpc v1.18.0
+	google.golang.org/grpc v1.29.0
 )
